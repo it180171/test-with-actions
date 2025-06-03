@@ -16,7 +16,7 @@ jobs:
           echo "::endgroup::"
 
   greet-user:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: "My Env Variable"
         run: |
