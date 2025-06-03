@@ -1,0 +1,14 @@
+name: Default Env Vars
+
+on: ['push']
+
+jobs: 
+  print-env-vars:
+  runs-on: ubuntu-latest 
+  steps:
+    - name: print env vars 
+      run: |
+        echo "Repository: $GITHUB_REPOSITORY"
+        echo "Workflow: $GITHUB_WORKFLOW"
+        echo "Action: $GITHUB_ACTION" 
+        echo "Actor: $GITHUB_ACTOR"
