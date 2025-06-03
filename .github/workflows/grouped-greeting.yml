@@ -1,4 +1,4 @@
-name: "Grouped Message Greeting"
+name: Grouped Message Greeting
 on:
   push:
     branches:
