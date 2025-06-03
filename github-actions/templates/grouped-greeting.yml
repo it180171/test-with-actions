@@ -1,0 +1,16 @@
+name: "Grouped Message Greeting"
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Group logging"
+        run: |
+          echo "::group::My Group Message"
+          echo "Hello"
+          echo "World"
+          echo "::endgroup::"
