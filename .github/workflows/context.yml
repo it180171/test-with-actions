@@ -10,7 +10,7 @@ jobs:
           echo "::group::Action & Actor"
           echo "Hello! $MY_ACTION"
           echo "Hello $MY_ACTOR"
-          echo "::endgroup::
+          echo "::endgroup::"
         env:
           MY_ACTION: ${{ github.action }}
           MY_ACTOR: ${{ github.actor }}
