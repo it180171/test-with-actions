@@ -14,3 +14,9 @@ jobs:
           echo "Hello"
           echo "World"
           echo "::endgroup::"
+      - name: "My Env Variable"
+        run: |
+          echo "MY_VAL=hello it180171" >> $GITHUB_ENV
+      - name: "step 2"
+        run: |
+          echo $MY_VAL
