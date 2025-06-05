@@ -1,0 +1,27 @@
+name: React to Label Event
+on:
+  issues: # The 'label' event is a type under 'issues' or 'pull_request'
+    types: [labeled, unlabeled]
+jobs:
+  label_event_action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const action = github.event_name === 'issues' && github.event.action; // 'labeled' or 'unlabeled'
+            const changedLabelName = github.event.label.name;
+
+            console.log(`Action: ${action}, Label changed: ${changedLabelName}`);
+
+            if (github.event.issue && github.event.issue.labels) {
+              const currentIssueLabels = github.event.issue.labels.map(l => l.name);
+              console.log("Current labels on issue:", currentIssueLabels);
+
+              if (action === 'labeled' && changedLabelName === 'priority:high') {
+                console.log("A high priority label was added!");
+                // Potentially notify someone or escalate
+              }
+            } else {
+              console.log("Issue object or its labels not found in payload.");
+            }
