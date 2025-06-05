@@ -3,16 +3,51 @@ name: Reference Script Action
 on:
   push:
     branches:
-      - main 
+      - main
 
-jobs: 
+jobs:
   echo-input:
     runs-on: ubuntu-latest
-    steps: 
-      - uses: actions/checkout@v4
-      - uses: actions/github-script@v7
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # This makes your ./public/script.js available
+
+      - name: Run external script via github-script
+        id: run_external_script # Give the step an ID to access its outputs
+        uses: actions/github-script@v7
         with:
           script: |
-            const path = require('path')
-            const scriptPath = path.resolve('./public/script.js')
-            console.log(require(scriptPath)({github, context, core}))
+            const path = require('path');
+            // Ensure this path correctly points to your script from the repo root
+            const scriptPath = path.resolve('./public/script.js');
+
+            console.log(`[Workflow] Attempting to load script from: ${scriptPath}`);
+
+            const externalFunction = require(scriptPath);
+
+            // Check if what we required is actually a function
+            if (typeof externalFunction !== 'function') {
+              core.setFailed(`Error: The file at ${scriptPath} did not export a function.`);
+              return; // Exit if not a function
+            }
+
+            console.log('[Workflow] External script loaded. Calling the function...');
+
+            // Call the exported function, passing an object with github, context, and core
+            const resultFromExternalScript = await externalFunction({github, context, core});
+
+            console.log('[Workflow] Result returned from external script:', resultFromExternalScript);
+
+            // The value returned here becomes an output of this 'actions/github-script' step
+            // It will be accessible as steps.run_external_script.outputs.result
+            return resultFromExternalScript;
+
+      - name: Use output from the external script (set by core.setOutput)
+        if: success() # Only run if previous steps succeeded
+        run: |
+          echo "Output 'processed_event' (set by core.setOutput in external script): ${{ steps.run_external_script.outputs.processed_event }}"
+
+      - name: Use result from the github-script step (returned by the inline script)
+        if: success()
+        run: |
+          echo "Output 'result' (returned by inline script): ${{ steps.run_external_script.outputs.result }}"
