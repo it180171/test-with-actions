@@ -9,19 +9,30 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const action = github.event_name === 'issues' && github.event.action; // 'labeled' or 'unlabeled'
-            const changedLabelName = github.event.label.name;
+            const eventName = github.context.eventName; // 'issues', 'issue_comment', etc.
+            const action = github.context.payload.action; // 'opened', 'labeled', 'unlabeled', 'created', etc.
 
-            console.log(`Action: ${action}, Label changed: ${changedLabelName}`);
+            console.log(`Event: ${eventName}, Action: ${action}`);
 
-            if (github.event.issue && github.event.issue.labels) {
-              const currentIssueLabels = github.event.issue.labels.map(l => l.name);
-              console.log("Current labels on issue:", currentIssueLabels);
-
-              if (action === 'labeled' && changedLabelName === 'priority:high') {
-                console.log("A high priority label was added!");
-                // Potentially notify someone or escalate
+            if (eventName === 'issues' && (action === 'labeled' || action === 'unlabeled')) {
+              // Only access github.event.label if the event type supports it
+              const changedLabelName = github.event.label.name;
+              const changedLabelColor = github.event.label.color;
+              console.log(`The label "${changedLabelName}" (color: ${changedLabelColor}) was ${action}.`);
+            } else if (github.event.issue && github.event.issue.labels) {
+              // For other issue events, get all labels from the issue object
+              const labelNames = github.event.issue.labels.map(label => label.name);
+              console.log("Current issue labels:", labelNames);
+              if (labelNames.includes('bug')) {
+                console.log("This issue has the 'bug' label.");
               }
-            } else {
-              console.log("Issue object or its labels not found in payload.");
+            } else if (github.event.pull_request && github.event.pull_request.labels && (action === 'labeled' || action === 'unlabeled')) {
+              // Example for pull_request labeled/unlabeled
+              const changedLabelName = github.event.label.name;
+              console.log(`The label "${changedLabelName}" was ${action} on the PR.`);
+              const currentPRLabels = github.event.pull_request.labels.map(l => l.name);
+              console.log("Current PR labels:", currentPRLabels);
+            }
+            else {
+              console.log("This event does not directly provide a 'changed label' (github.event.label) or issue/PR labels in the expected path.");
             }
