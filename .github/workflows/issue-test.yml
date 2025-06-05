@@ -1,6 +1,6 @@
 name: React to Label Event
 on:
-  issues: # The 'label' event is a type under 'issues' or 'pull_request'
+  issues:
     types: [labeled, unlabeled]
 jobs:
   label_event_action:
@@ -9,30 +9,44 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const eventName = github.context.eventName; // 'issues', 'issue_comment', etc.
-            const action = github.context.payload.action; // 'opened', 'labeled', 'unlabeled', 'created', etc.
+            // Use 'context' directly for event information
+            const eventName = context.eventName;
+            const action = context.payload.action; // 'labeled', 'unlabeled'
 
             console.log(`Event: ${eventName}, Action: ${action}`);
 
+            // The 'payload' object contains the event-specific data
+            // For 'labeled'/'unlabeled' events, 'context.payload.label' has the changed label
+            // and 'context.payload.issue' (or .pull_request) has the item that was labeled.
+
             if (eventName === 'issues' && (action === 'labeled' || action === 'unlabeled')) {
-              // Only access github.event.label if the event type supports it
-              const changedLabelName = github.event.label.name;
-              const changedLabelColor = github.event.label.color;
-              console.log(`The label "${changedLabelName}" (color: ${changedLabelColor}) was ${action}.`);
-            } else if (github.event.issue && github.event.issue.labels) {
-              // For other issue events, get all labels from the issue object
-              const labelNames = github.event.issue.labels.map(label => label.name);
-              console.log("Current issue labels:", labelNames);
-              if (labelNames.includes('bug')) {
-                console.log("This issue has the 'bug' label.");
+              if (context.payload.label) {
+                const changedLabelName = context.payload.label.name;
+                const changedLabelColor = context.payload.label.color;
+                console.log(`The label "${changedLabelName}" (color: ${changedLabelColor}) was ${action} on an issue.`);
+
+                if (context.payload.issue && context.payload.issue.labels) {
+                  const currentIssueLabels = context.payload.issue.labels.map(l => l.name);
+                  console.log("Current labels on issue:", currentIssueLabels);
+                }
+              } else {
+                console.log("Error: context.payload.label is missing for a labeled/unlabeled event.");
               }
-            } else if (github.event.pull_request && github.event.pull_request.labels && (action === 'labeled' || action === 'unlabeled')) {
-              // Example for pull_request labeled/unlabeled
-              const changedLabelName = github.event.label.name;
-              console.log(`The label "${changedLabelName}" was ${action} on the PR.`);
-              const currentPRLabels = github.event.pull_request.labels.map(l => l.name);
-              console.log("Current PR labels:", currentPRLabels);
+            } else if (eventName === 'pull_request' && (action === 'labeled' || action === 'unlabeled')) {
+              // Example if you were also triggering on pull_request label events
+              if (context.payload.label) {
+                const changedLabelName = context.payload.label.name;
+                console.log(`The label "${changedLabelName}" was ${action} on a PR.`);
+                if (context.payload.pull_request && context.payload.pull_request.labels) {
+                  const currentPRLabels = context.payload.pull_request.labels.map(l => l.name);
+                  console.log("Current PR labels:", currentPRLabels);
+                }
+              } else {
+                console.log("Error: context.payload.label is missing for a labeled/unlabeled event.");
+              }
             }
             else {
-              console.log("This event does not directly provide a 'changed label' (github.event.label) or issue/PR labels in the expected path.");
+              // This else block should ideally not be reached if your 'on:' trigger is only for labeled/unlabeled
+              console.log("This script is intended for 'labeled' or 'unlabeled' events on issues/PRs.");
+              console.log("Payload:", JSON.stringify(context.payload, null, 2)); // For debugging other events
             }
